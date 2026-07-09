@@ -8,7 +8,7 @@ load_dotenv()
 REAL_BASE_URL = "https://openapi.koreainvestment.com:9443"
 MOCK_BASE_URL = "https://openapivts.koreainvestment.com:29443"
 
-STOCK_CODE = "000660"  # SK하이닉스
+STOCK_CODE = "005930"  # 삼성전자
 MARKET_OPEN = "09:00"
 MARKET_CLOSE = "15:30"
 POLL_INTERVAL_SEC = 30

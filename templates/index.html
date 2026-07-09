@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8">
-  <title>SK하이닉스 자동매매 설정</title>
+  <title>삼성전자 자동매매 설정</title>
   <style>
     body { font-family: -apple-system, sans-serif; max-width: 420px; margin: 60px auto; color: #222; padding: 0 16px; }
     h1 { font-size: 20px; }
@@ -12,10 +12,24 @@
     .msg { margin-top: 16px; padding: 10px; border-radius: 4px; font-size: 14px; }
     .msg.ok { background: #e6f7e6; color: #1a7a1a; }
     .msg.error { background: #fdeaea; color: #b00020; }
+    .status { margin-top: 16px; padding: 14px; border-radius: 6px; background: #f5f5f7; font-size: 14px; }
+    .status div { display: flex; justify-content: space-between; margin-top: 6px; }
+    .status div:first-child { margin-top: 0; }
   </style>
 </head>
 <body>
-  <h1>SK하이닉스(000660) 자동매매 설정</h1>
+  <h1>삼성전자(005930) 자동매매 설정</h1>
+
+  <div class="status">
+    <div><span>현재 시장가</span><strong>{{ "{:,}".format(current_price) + "원" if current_price is not none else "조회 실패" }}</strong></div>
+    <div><span>보유 수량</span><strong>{{ holding.qty }}주</strong></div>
+    {% if holding.qty > 0 %}
+    <div><span>매입 평균가</span><strong>{{ "{:,}".format(holding.avg_price) }}원</strong></div>
+    {% endif %}
+  </div>
+  {% if status_error %}
+  <div class="msg error">{{ status_error }}</div>
+  {% endif %}
 
   {% if saved %}
   <div class="msg ok">저장됐습니다. 다음 매매 주기(최대 30초)부터 적용됩니다.</div>

@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import logging
+import time
 from datetime import datetime, timedelta
 
 import requests
@@ -68,7 +71,7 @@ class KisApi:
             raise RuntimeError(f"현재가 조회 실패: {data.get('msg1')}")
         return int(data["output"]["stck_prpr"])
 
-    def get_holding_quantity(self, stock_code: str) -> int:
+    def _find_holding(self, stock_code: str) -> dict | None:
         tr_id = BALANCE_TR_ID[self._mode()]
         url = f"{self.settings.base_url}/uapi/domestic-stock/v1/trading/inquire-balance"
         params = {
@@ -84,16 +87,36 @@ class KisApi:
             "CTX_AREA_FK100": "",
             "CTX_AREA_NK100": "",
         }
-        res = requests.get(url, headers=self._headers(tr_id), params=params, timeout=10)
-        res.raise_for_status()
-        data = res.json()
-        if data.get("rt_cd") != "0":
-            raise RuntimeError(f"잔고 조회 실패: {data.get('msg1')}")
+        last_error = None
+        for attempt in range(2):
+            try:
+                res = requests.get(url, headers=self._headers(tr_id), params=params, timeout=10)
+                res.raise_for_status()
+                data = res.json()
+                if data.get("rt_cd") != "0":
+                    raise RuntimeError(f"잔고 조회 실패: {data.get('msg1')}")
+                break
+            except (requests.exceptions.HTTPError, RuntimeError) as exc:
+                last_error = exc
+                if attempt == 0:
+                    time.sleep(1)
+        else:
+            raise last_error
 
         for item in data.get("output1", []):
             if item.get("pdno") == stock_code:
-                return int(item.get("hldg_qty", 0))
-        return 0
+                return item
+        return None
+
+    def get_holding_quantity(self, stock_code: str) -> int:
+        item = self._find_holding(stock_code)
+        return int(item["hldg_qty"]) if item else 0
+
+    def get_holding_info(self, stock_code: str) -> dict:
+        item = self._find_holding(stock_code)
+        if not item or int(item["hldg_qty"]) == 0:
+            return {"qty": 0, "avg_price": 0}
+        return {"qty": int(item["hldg_qty"]), "avg_price": int(float(item["pchs_avg_pric"]))}
 
     def _place_order(self, tr_id: str, stock_code: str, qty: int) -> dict:
         url = f"{self.settings.base_url}/uapi/domestic-stock/v1/trading/order-cash"
