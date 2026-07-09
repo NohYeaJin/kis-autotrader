@@ -4,8 +4,8 @@ from pathlib import Path
 SETTINGS_FILE = Path(__file__).parent / "trade_settings.json"
 
 DEFAULT_SETTINGS = {
-    "buy_price": 260_000,
-    "sell_price": 270_000,
+    "buy_price": 2_200_000,
+    "sell_price": 2_250_000,
     "order_qty": 1,
 }
 
