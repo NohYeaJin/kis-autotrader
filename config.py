@@ -22,10 +22,6 @@ class Settings:
     acnt_prdt_cd: str
     is_mock: bool
     base_url: str
-    order_qty: int
-
-    buy_price_threshold: int
-    sell_price_threshold: int
 
     stock_code: str = STOCK_CODE
     market_open: str = MARKET_OPEN
@@ -38,9 +34,6 @@ def load_settings() -> Settings:
     app_secret = os.environ["APP_SECRET"]
     account_no = os.environ["ACCOUNT_NO"]  # 형식: "12345678-01"
     is_mock = os.environ.get("IS_MOCK", "true").strip().lower() == "true"
-    order_qty = int(os.environ.get("ORDER_QTY", "1"))
-    buy_price_threshold = int(os.environ["BUY_PRICE"])
-    sell_price_threshold = int(os.environ["SELL_PRICE"])
 
     cano, acnt_prdt_cd = account_no.split("-")
 
@@ -51,7 +44,4 @@ def load_settings() -> Settings:
         acnt_prdt_cd=acnt_prdt_cd,
         is_mock=is_mock,
         base_url=MOCK_BASE_URL if is_mock else REAL_BASE_URL,
-        order_qty=order_qty,
-        buy_price_threshold=buy_price_threshold,
-        sell_price_threshold=sell_price_threshold,
     )

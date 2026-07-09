@@ -6,6 +6,7 @@ from pathlib import Path
 
 from config import load_settings
 from kis_api import KisApi
+from trade_settings import load_trade_settings
 
 logging.basicConfig(
     level=logging.INFO,
@@ -67,12 +68,9 @@ def run() -> None:
 
     mode = "모의투자" if settings.is_mock else "실전투자"
     logger.info(
-        "자동매매 시작 (%s) | 종목: %s | 매수기준: %s원 이하 | 매도기준: %s원 이상 | 수량: %s주",
+        "자동매매 시작 (%s) | 종목: %s | 매수가/매도가/수량은 trade_settings.json에서 매 주기마다 읽습니다.",
         mode,
         settings.stock_code,
-        f"{settings.buy_price_threshold:,}",
-        f"{settings.sell_price_threshold:,}",
-        settings.order_qty,
     )
 
     wait_until_market_open(settings.market_open)
@@ -84,27 +82,35 @@ def run() -> None:
             break
 
         try:
+            trade_settings = load_trade_settings()
+            buy_price = trade_settings["buy_price"]
+            sell_price = trade_settings["sell_price"]
+            order_qty = trade_settings["order_qty"]
+
             price = api.get_current_price(settings.stock_code)
             holding_qty = api.get_holding_quantity(settings.stock_code)
-            logger.info("현재가: %s원 | 보유수량: %s주", f"{price:,}", holding_qty)
+            logger.info(
+                "현재가: %s원 | 보유수량: %s주 | 매수기준: %s원 이하 | 매도기준: %s원 이상 | 수량: %s주",
+                f"{price:,}", holding_qty, f"{buy_price:,}", f"{sell_price:,}", order_qty,
+            )
 
             if holding_qty == 0:
-                if not bought_today(state) and price <= settings.buy_price_threshold:
-                    api.buy_market_order(settings.stock_code, settings.order_qty)
+                if not bought_today(state) and price <= buy_price:
+                    api.buy_market_order(settings.stock_code, order_qty)
                     mark_bought_today(state)
                     logger.info(
                         "[매수 체결] %s주 (기준: %s원 이하, 현재가: %s원)",
-                        settings.order_qty,
-                        f"{settings.buy_price_threshold:,}",
+                        order_qty,
+                        f"{buy_price:,}",
                         f"{price:,}",
                     )
             else:
-                if price >= settings.sell_price_threshold:
+                if price >= sell_price:
                     api.sell_market_order(settings.stock_code, holding_qty)
                     logger.info(
                         "[매도 체결] %s주 (기준: %s원 이상, 현재가: %s원)",
                         holding_qty,
-                        f"{settings.sell_price_threshold:,}",
+                        f"{sell_price:,}",
                         f"{price:,}",
                     )
 

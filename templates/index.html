@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <title>SK하이닉스 자동매매 설정</title>
+  <style>
+    body { font-family: -apple-system, sans-serif; max-width: 420px; margin: 60px auto; color: #222; padding: 0 16px; }
+    h1 { font-size: 20px; }
+    label { display: block; margin-top: 16px; font-size: 14px; color: #555; }
+    input { width: 100%; padding: 8px; margin-top: 4px; font-size: 16px; box-sizing: border-box; }
+    button { margin-top: 24px; width: 100%; padding: 10px; font-size: 16px; cursor: pointer; }
+    .msg { margin-top: 16px; padding: 10px; border-radius: 4px; font-size: 14px; }
+    .msg.ok { background: #e6f7e6; color: #1a7a1a; }
+    .msg.error { background: #fdeaea; color: #b00020; }
+  </style>
+</head>
+<body>
+  <h1>SK하이닉스(000660) 자동매매 설정</h1>
+
+  {% if saved %}
+  <div class="msg ok">저장됐습니다. 다음 매매 주기(최대 30초)부터 적용됩니다.</div>
+  {% endif %}
+  {% if error %}
+  <div class="msg error">{{ error }}</div>
+  {% endif %}
+
+  <form method="post">
+    <label>매수가 (이 가격 이하일 때 매수)
+      <input type="number" name="buy_price" value="{{ settings.buy_price }}" required min="1">
+    </label>
+    <label>매도가 (이 가격 이상일 때 매도)
+      <input type="number" name="sell_price" value="{{ settings.sell_price }}" required min="1">
+    </label>
+    <label>1회 매수 수량
+      <input type="number" name="order_qty" value="{{ settings.order_qty }}" required min="1">
+    </label>
+    <button type="submit">저장</button>
+  </form>
+</body>
+</html>
