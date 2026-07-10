@@ -6,6 +6,7 @@ from pathlib import Path
 
 from config import load_settings
 from kis_api import KisApi
+from trade_history import record_trade
 from trade_settings import STOCKS, load_trade_settings
 
 logging.basicConfig(
@@ -106,6 +107,7 @@ def run() -> None:
                     if not bought_today(state, code) and price <= buy_price:
                         api.buy_market_order(code, order_qty)
                         mark_bought_today(state, code)
+                        record_trade(code, name, "buy", order_qty, price)
                         logger.info(
                             "[%s] [매수 체결] %s주 (기준: %s원 이하, 현재가: %s원)",
                             name, order_qty, f"{buy_price:,}", f"{price:,}",
@@ -113,6 +115,7 @@ def run() -> None:
                 else:
                     if price >= sell_price:
                         api.sell_market_order(code, holding_qty)
+                        record_trade(code, name, "sell", holding_qty, price)
                         logger.info(
                             "[%s] [매도 체결] %s주 (기준: %s원 이상, 현재가: %s원)",
                             name, holding_qty, f"{sell_price:,}", f"{price:,}",

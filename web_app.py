@@ -2,6 +2,7 @@ from flask import Flask, redirect, render_template, request, url_for
 
 from config import load_settings
 from kis_api import KisApi
+from trade_history import load_history
 from trade_settings import STOCKS, load_trade_settings, save_trade_settings
 
 app = Flask(__name__)
@@ -70,6 +71,7 @@ def index():
     status_error = " / ".join(status_errors) if status_errors else None
     saved_code = request.args.get("saved")
     error_code = request.args.get("error")
+    recent_trades = list(reversed(load_history()))[:10]
 
     return render_template(
         "index.html",
@@ -77,6 +79,7 @@ def index():
         status_error=status_error,
         saved_name=STOCK_NAMES.get(saved_code),
         error_name=STOCK_NAMES.get(error_code),
+        recent_trades=recent_trades,
     )
 
 

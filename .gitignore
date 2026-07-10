@@ -1,6 +1,7 @@
 .env
 state.json
 trade_settings.json
+trade_history.json
 *.log
 __pycache__/
 *.pyc

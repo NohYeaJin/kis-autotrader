@@ -23,6 +23,11 @@
     button { padding: 8px 14px; font-size: 13px; cursor: pointer; }
     .held { color: #b00020; font-weight: 600; }
     .enable-cell { text-align: center !important; }
+
+    h2 { font-size: 16px; margin-top: 40px; }
+    .action-buy { color: #1a7a1a; font-weight: 600; }
+    .action-sell { color: #b00020; font-weight: 600; }
+    .empty { color: #999; margin-top: 12px; font-size: 14px; }
   </style>
 </head>
 <body>
@@ -65,5 +70,29 @@
     </form>
     {% endfor %}
   </div>
+
+  <h2>최근 체결 기록 (최대 10건)</h2>
+  {% if recent_trades %}
+  <div class="table">
+    <div class="row header">
+      <div>시각</div>
+      <div>종목</div>
+      <div>구분</div>
+      <div>수량</div>
+      <div>체결가</div>
+    </div>
+    {% for t in recent_trades %}
+    <div class="row">
+      <div>{{ t.timestamp }}</div>
+      <div>{{ t.name }}</div>
+      <div class="{{ 'action-buy' if t.action == 'buy' else 'action-sell' }}">{{ "매수" if t.action == "buy" else "매도" }}</div>
+      <div>{{ t.qty }}주</div>
+      <div>{{ "{:,}".format(t.price) }}원</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="empty">아직 체결 기록이 없습니다.</p>
+  {% endif %}
 </body>
 </html>
