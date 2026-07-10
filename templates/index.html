@@ -2,34 +2,25 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8">
-  <title>SK하이닉스 자동매매 설정</title>
+  <title>단타봇 설정</title>
   <style>
-    body { font-family: -apple-system, sans-serif; max-width: 420px; margin: 60px auto; color: #222; padding: 0 16px; }
+    body { font-family: -apple-system, sans-serif; max-width: 900px; margin: 40px auto; color: #222; padding: 0 16px; }
     h1 { font-size: 20px; }
-    label { display: block; margin-top: 16px; font-size: 14px; color: #555; }
-    input { width: 100%; padding: 8px; margin-top: 4px; font-size: 16px; box-sizing: border-box; }
-    button { margin-top: 24px; width: 100%; padding: 10px; font-size: 16px; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+    th, td { padding: 10px 8px; border-bottom: 1px solid #e5e5e5; text-align: right; white-space: nowrap; }
+    th:first-child, td:first-child { text-align: left; }
+    th { color: #666; font-weight: 500; font-size: 13px; }
+    input { width: 90px; padding: 6px; font-size: 14px; box-sizing: border-box; text-align: right; }
+    button { margin-top: 20px; padding: 10px 20px; font-size: 15px; cursor: pointer; }
     .msg { margin-top: 16px; padding: 10px; border-radius: 4px; font-size: 14px; }
     .msg.ok { background: #e6f7e6; color: #1a7a1a; }
     .msg.error { background: #fdeaea; color: #b00020; }
-    .status { margin-top: 16px; padding: 14px; border-radius: 6px; background: #f5f5f7; font-size: 14px; }
-    .status div { display: flex; justify-content: space-between; margin-top: 6px; }
-    .status div:first-child { margin-top: 0; }
+    .qty-input { width: 50px; }
+    .held { color: #b00020; font-weight: 600; }
   </style>
 </head>
 <body>
-  <h1>SK하이닉스(000660) 자동매매 설정</h1>
-
-  <div class="status">
-    <div><span>현재 시장가</span><strong>{{ "{:,}".format(current_price) + "원" if current_price is not none else "조회 실패" }}</strong></div>
-    <div><span>보유 수량</span><strong>{{ holding.qty }}주</strong></div>
-    {% if holding.qty > 0 %}
-    <div><span>매입 평균가</span><strong>{{ "{:,}".format(holding.avg_price) }}원</strong></div>
-    {% endif %}
-  </div>
-  {% if status_error %}
-  <div class="msg error">{{ status_error }}</div>
-  {% endif %}
+  <h1>5종목 단타봇 설정</h1>
 
   {% if saved %}
   <div class="msg ok">저장됐습니다. 다음 매매 주기(최대 30초)부터 적용됩니다.</div>
@@ -37,18 +28,38 @@
   {% if error %}
   <div class="msg error">{{ error }}</div>
   {% endif %}
+  {% if status_error %}
+  <div class="msg error">{{ status_error }}</div>
+  {% endif %}
 
   <form method="post">
-    <label>매수가 (이 가격 이하일 때 매수)
-      <input type="number" name="buy_price" value="{{ settings.buy_price }}" required min="1">
-    </label>
-    <label>매도가 (이 가격 이상일 때 매도)
-      <input type="number" name="sell_price" value="{{ settings.sell_price }}" required min="1">
-    </label>
-    <label>1회 매수 수량
-      <input type="number" name="order_qty" value="{{ settings.order_qty }}" required min="1">
-    </label>
-    <button type="submit">저장</button>
+    <table>
+      <thead>
+        <tr>
+          <th>종목</th>
+          <th>현재가</th>
+          <th>보유수량</th>
+          <th>매입평균가</th>
+          <th>매수가(이하)</th>
+          <th>매도가(이상)</th>
+          <th>수량</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td>{{ row.name }}<br><span style="color:#999; font-size:12px;">{{ row.code }}</span></td>
+          <td>{{ "{:,}".format(row.current_price) + "원" if row.current_price is not none else "조회 실패" }}</td>
+          <td class="{{ 'held' if row.holding.qty > 0 else '' }}">{{ row.holding.qty }}주</td>
+          <td>{{ "{:,}".format(row.holding.avg_price) + "원" if row.holding.qty > 0 else "-" }}</td>
+          <td><input type="number" name="buy_price_{{ row.code }}" value="{{ row.settings.buy_price }}" required min="1"></td>
+          <td><input type="number" name="sell_price_{{ row.code }}" value="{{ row.settings.sell_price }}" required min="1"></td>
+          <td><input class="qty-input" type="number" name="order_qty_{{ row.code }}" value="{{ row.settings.order_qty }}" required min="1"></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <button type="submit">전체 저장</button>
   </form>
 </body>
 </html>
