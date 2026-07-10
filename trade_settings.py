@@ -12,11 +12,11 @@ STOCKS = [
 ]
 
 DEFAULT_SETTINGS = {
-    "000660": {"buy_price": 2_150_000, "sell_price": 2_220_000, "order_qty": 1},
-    "005930": {"buy_price": 280_000, "sell_price": 290_000, "order_qty": 1},
-    "402340": {"buy_price": 1_380_000, "sell_price": 1_430_000, "order_qty": 1},
-    "005380": {"buy_price": 450_000, "sell_price": 465_000, "order_qty": 1},
-    "009150": {"buy_price": 1_550_000, "sell_price": 1_610_000, "order_qty": 1},
+    "000660": {"buy_price": 2_150_000, "sell_price": 2_220_000, "order_qty": 1, "enabled": True},
+    "005930": {"buy_price": 280_000, "sell_price": 290_000, "order_qty": 1, "enabled": True},
+    "402340": {"buy_price": 1_380_000, "sell_price": 1_430_000, "order_qty": 1, "enabled": True},
+    "005380": {"buy_price": 450_000, "sell_price": 465_000, "order_qty": 1, "enabled": True},
+    "009150": {"buy_price": 1_550_000, "sell_price": 1_610_000, "order_qty": 1, "enabled": True},
 }
 
 
@@ -26,7 +26,7 @@ def load_trade_settings() -> dict:
         return dict(DEFAULT_SETTINGS)
 
     saved = json.loads(SETTINGS_FILE.read_text())
-    merged = {**DEFAULT_SETTINGS, **saved}
+    merged = {code: {**defaults, **saved.get(code, {})} for code, defaults in DEFAULT_SETTINGS.items()}
     return merged
 
 

@@ -4,62 +4,66 @@
   <meta charset="utf-8">
   <title>단타봇 설정</title>
   <style>
-    body { font-family: -apple-system, sans-serif; max-width: 900px; margin: 40px auto; color: #222; padding: 0 16px; }
+    body { font-family: -apple-system, sans-serif; max-width: 960px; margin: 40px auto; color: #222; padding: 0 16px; }
     h1 { font-size: 20px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
-    th, td { padding: 10px 8px; border-bottom: 1px solid #e5e5e5; text-align: right; white-space: nowrap; }
-    th:first-child, td:first-child { text-align: left; }
-    th { color: #666; font-weight: 500; font-size: 13px; }
-    input { width: 90px; padding: 6px; font-size: 14px; box-sizing: border-box; text-align: right; }
-    button { margin-top: 20px; padding: 10px 20px; font-size: 15px; cursor: pointer; }
     .msg { margin-top: 16px; padding: 10px; border-radius: 4px; font-size: 14px; }
     .msg.ok { background: #e6f7e6; color: #1a7a1a; }
     .msg.error { background: #fdeaea; color: #b00020; }
+
+    .table { display: table; width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+    .row { display: table-row; }
+    .row > * { display: table-cell; padding: 10px 8px; border-bottom: 1px solid #e5e5e5; text-align: right; vertical-align: middle; white-space: nowrap; }
+    .row > *:first-child { text-align: left; }
+    .header > * { color: #666; font-weight: 500; font-size: 13px; border-bottom: 2px solid #ddd; }
+
+    .row.disabled { opacity: 0.45; }
+
+    input[type=number] { width: 90px; padding: 6px; font-size: 14px; box-sizing: border-box; text-align: right; }
     .qty-input { width: 50px; }
+    button { padding: 8px 14px; font-size: 13px; cursor: pointer; }
     .held { color: #b00020; font-weight: 600; }
+    .enable-cell { text-align: center !important; }
   </style>
 </head>
 <body>
   <h1>5종목 단타봇 설정</h1>
 
-  {% if saved %}
-  <div class="msg ok">저장됐습니다. 다음 매매 주기(최대 30초)부터 적용됩니다.</div>
+  {% if saved_name %}
+  <div class="msg ok">{{ saved_name }} 저장됐습니다. 다음 매매 주기(최대 30초)부터 적용됩니다.</div>
   {% endif %}
-  {% if error %}
-  <div class="msg error">{{ error }}</div>
+  {% if error_name %}
+  <div class="msg error">{{ error_name }} 값을 올바르게 입력해주세요 (양의 정수).</div>
   {% endif %}
   {% if status_error %}
   <div class="msg error">{{ status_error }}</div>
   {% endif %}
 
-  <form method="post">
-    <table>
-      <thead>
-        <tr>
-          <th>종목</th>
-          <th>현재가</th>
-          <th>보유수량</th>
-          <th>매입평균가</th>
-          <th>매수가(이하)</th>
-          <th>매도가(이상)</th>
-          <th>수량</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for row in rows %}
-        <tr>
-          <td>{{ row.name }}<br><span style="color:#999; font-size:12px;">{{ row.code }}</span></td>
-          <td>{{ "{:,}".format(row.current_price) + "원" if row.current_price is not none else "조회 실패" }}</td>
-          <td class="{{ 'held' if row.holding.qty > 0 else '' }}">{{ row.holding.qty }}주</td>
-          <td>{{ "{:,}".format(row.holding.avg_price) + "원" if row.holding.qty > 0 else "-" }}</td>
-          <td><input type="number" name="buy_price_{{ row.code }}" value="{{ row.settings.buy_price }}" required min="1"></td>
-          <td><input type="number" name="sell_price_{{ row.code }}" value="{{ row.settings.sell_price }}" required min="1"></td>
-          <td><input class="qty-input" type="number" name="order_qty_{{ row.code }}" value="{{ row.settings.order_qty }}" required min="1"></td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    <button type="submit">전체 저장</button>
-  </form>
+  <div class="table">
+    <div class="row header">
+      <div>종목</div>
+      <div>현재가</div>
+      <div>보유수량</div>
+      <div>매입평균가</div>
+      <div>매수가(이하)</div>
+      <div>매도가(이상)</div>
+      <div>수량</div>
+      <div class="enable-cell">단타 사용</div>
+      <div></div>
+    </div>
+
+    {% for row in rows %}
+    <form class="row{{ ' disabled' if not row.settings.enabled }}" method="post" action="/update/{{ row.code }}">
+      <div>{{ row.name }}<br><span style="color:#999; font-size:12px;">{{ row.code }}</span></div>
+      <div>{{ "{:,}".format(row.current_price) + "원" if row.current_price is not none else "조회 실패" }}</div>
+      <div class="{{ 'held' if row.holding.qty > 0 else '' }}">{{ row.holding.qty }}주</div>
+      <div>{{ "{:,}".format(row.holding.avg_price) + "원" if row.holding.qty > 0 else "-" }}</div>
+      <div><input type="number" name="buy_price" value="{{ row.settings.buy_price }}" required min="1"></div>
+      <div><input type="number" name="sell_price" value="{{ row.settings.sell_price }}" required min="1"></div>
+      <div><input class="qty-input" type="number" name="order_qty" value="{{ row.settings.order_qty }}" required min="1"></div>
+      <div class="enable-cell"><input type="checkbox" name="enabled" {{ "checked" if row.settings.enabled }}></div>
+      <div><button type="submit">확정</button></div>
+    </form>
+    {% endfor %}
+  </div>
 </body>
 </html>

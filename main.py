@@ -88,6 +88,9 @@ def run() -> None:
             code, name = stock["code"], stock["name"]
             try:
                 stock_settings = trade_settings[code]
+                if not stock_settings.get("enabled", True):
+                    continue
+
                 buy_price = stock_settings["buy_price"]
                 sell_price = stock_settings["sell_price"]
                 order_qty = stock_settings["order_qty"]

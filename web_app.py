@@ -8,31 +8,36 @@ app = Flask(__name__)
 settings = load_settings()
 api = KisApi(settings)
 
+STOCK_NAMES = {s["code"]: s["name"] for s in STOCKS}
 
-@app.route("/", methods=["GET", "POST"])
+
+@app.route("/update/<code>", methods=["POST"])
+def update(code):
+    if code not in STOCK_NAMES:
+        return "알 수 없는 종목", 404
+
+    try:
+        buy_price = int(request.form["buy_price"])
+        sell_price = int(request.form["sell_price"])
+        order_qty = int(request.form["order_qty"])
+        if buy_price <= 0 or sell_price <= 0 or order_qty <= 0:
+            raise ValueError
+
+        trade_settings = load_trade_settings()
+        trade_settings[code] = {
+            "buy_price": buy_price,
+            "sell_price": sell_price,
+            "order_qty": order_qty,
+            "enabled": "enabled" in request.form,
+        }
+        save_trade_settings(trade_settings)
+        return redirect(url_for("index", saved=code))
+    except (KeyError, ValueError):
+        return redirect(url_for("index", error=code))
+
+
+@app.route("/", methods=["GET"])
 def index():
-    error = None
-
-    if request.method == "POST":
-        try:
-            trade_settings = load_trade_settings()
-            for stock in STOCKS:
-                code = stock["code"]
-                buy_price = int(request.form[f"buy_price_{code}"])
-                sell_price = int(request.form[f"sell_price_{code}"])
-                order_qty = int(request.form[f"order_qty_{code}"])
-                if buy_price <= 0 or sell_price <= 0 or order_qty <= 0:
-                    raise ValueError
-                trade_settings[code] = {
-                    "buy_price": buy_price,
-                    "sell_price": sell_price,
-                    "order_qty": order_qty,
-                }
-            save_trade_settings(trade_settings)
-            return redirect(url_for("index", saved=1))
-        except (KeyError, ValueError):
-            error = "값을 올바르게 입력해주세요 (양의 정수)."
-
     trade_settings = load_trade_settings()
     rows = []
     status_errors = []
@@ -63,13 +68,15 @@ def index():
         )
 
     status_error = " / ".join(status_errors) if status_errors else None
+    saved_code = request.args.get("saved")
+    error_code = request.args.get("error")
 
     return render_template(
         "index.html",
         rows=rows,
-        error=error,
-        saved=request.args.get("saved"),
         status_error=status_error,
+        saved_name=STOCK_NAMES.get(saved_code),
+        error_name=STOCK_NAMES.get(error_code),
     )
 
 

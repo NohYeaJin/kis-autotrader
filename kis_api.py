@@ -58,17 +58,29 @@ class KisApi:
             "custtype": "P",
         }
 
+    def _get_with_retry(self, url: str, tr_id: str, params: dict, retries: int = 2) -> dict:
+        last_error = None
+        for attempt in range(retries):
+            try:
+                res = requests.get(url, headers=self._headers(tr_id), params=params, timeout=10)
+                res.raise_for_status()
+                data = res.json()
+                if data.get("rt_cd") != "0":
+                    raise RuntimeError(f"조회 실패: {data.get('msg1')}")
+                return data
+            except (requests.exceptions.HTTPError, RuntimeError) as exc:
+                last_error = exc
+                if attempt < retries - 1:
+                    time.sleep(1)
+        raise last_error
+
     def get_current_price(self, stock_code: str) -> int:
         url = f"{self.settings.base_url}/uapi/domestic-stock/v1/quotations/inquire-price"
         params = {
             "FID_COND_MRKT_DIV_CODE": "J",
             "FID_INPUT_ISCD": stock_code,
         }
-        res = requests.get(url, headers=self._headers(PRICE_TR_ID), params=params, timeout=10)
-        res.raise_for_status()
-        data = res.json()
-        if data.get("rt_cd") != "0":
-            raise RuntimeError(f"현재가 조회 실패: {data.get('msg1')}")
+        data = self._get_with_retry(url, PRICE_TR_ID, params)
         return int(data["output"]["stck_prpr"])
 
     def _find_holding(self, stock_code: str) -> dict | None:
@@ -87,22 +99,7 @@ class KisApi:
             "CTX_AREA_FK100": "",
             "CTX_AREA_NK100": "",
         }
-        last_error = None
-        for attempt in range(2):
-            try:
-                res = requests.get(url, headers=self._headers(tr_id), params=params, timeout=10)
-                res.raise_for_status()
-                data = res.json()
-                if data.get("rt_cd") != "0":
-                    raise RuntimeError(f"잔고 조회 실패: {data.get('msg1')}")
-                break
-            except (requests.exceptions.HTTPError, RuntimeError) as exc:
-                last_error = exc
-                if attempt == 0:
-                    time.sleep(1)
-        else:
-            raise last_error
-
+        data = self._get_with_retry(url, tr_id, params)
         for item in data.get("output1", []):
             if item.get("pdno") == stock_code:
                 return item
