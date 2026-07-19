@@ -1,9 +1,11 @@
 import json
 from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 HISTORY_FILE = Path(__file__).parent / "trade_history.json"
 MAX_RECORDS = 200
+KST = ZoneInfo("Asia/Seoul")
 
 
 def load_history() -> list:
@@ -16,7 +18,7 @@ def record_trade(code: str, name: str, action: str, qty: int, price: int) -> Non
     history = load_history()
     history.append(
         {
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "timestamp": datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S"),
             "code": code,
             "name": name,
             "action": action,

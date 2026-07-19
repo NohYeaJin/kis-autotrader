@@ -1,8 +1,9 @@
 import json
 import logging
 import time
-from datetime import date, datetime
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from config import load_settings
 from kis_api import KisApi
@@ -16,6 +17,11 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 STATE_FILE = Path(__file__).parent / "state.json"
+KST = ZoneInfo("Asia/Seoul")
+
+
+def now_kst() -> datetime:
+    return datetime.now(KST)
 
 
 def load_state() -> dict:
@@ -29,11 +35,11 @@ def save_state(state: dict) -> None:
 
 
 def bought_today(state: dict, stock_code: str) -> bool:
-    return state.get(stock_code, {}).get("last_buy_date") == date.today().isoformat()
+    return state.get(stock_code, {}).get("last_buy_date") == now_kst().date().isoformat()
 
 
 def mark_bought_today(state: dict, stock_code: str) -> None:
-    state.setdefault(stock_code, {})["last_buy_date"] = date.today().isoformat()
+    state.setdefault(stock_code, {})["last_buy_date"] = now_kst().date().isoformat()
     save_state(state)
 
 
@@ -45,7 +51,7 @@ def parse_hhmm(value: str) -> tuple[int, int]:
 def wait_until_market_open(open_hhmm: str) -> None:
     hour, minute = parse_hhmm(open_hhmm)
     while True:
-        now = datetime.now()
+        now = now_kst()
         open_time = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
         if now >= open_time:
             return
@@ -78,7 +84,7 @@ def run() -> None:
     wait_until_market_open(settings.market_open)
 
     while True:
-        now = datetime.now()
+        now = now_kst()
         if not is_market_open(now, settings.market_open, settings.market_close):
             logger.info("장 마감 시간이 되어 프로그램을 종료합니다.")
             break
