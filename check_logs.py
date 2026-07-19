@@ -1,12 +1,18 @@
 import re
 import subprocess
+import sys
 from collections import defaultdict
 
+since = sys.argv[1] if len(sys.argv) > 1 else "7 days ago"
+until = sys.argv[2] if len(sys.argv) > 2 else "now"
+
 result = subprocess.run(
-    ["journalctl", "-u", "kis-bot", "--since", "7 days ago", "--no-pager"],
+    ["journalctl", "-u", "kis-bot", "--since", since, "--until", until, "--no-pager"],
     capture_output=True, text=True
 )
 lines = result.stdout.splitlines()
+print(f"조회 범위: {since} ~ {until} (로그 {len(lines)}줄)")
+print()
 
 pattern = re.compile(r"\[(.+?)\] 현재가: ([\d,]+)원 \| 보유수량: (\d+)주 \| 매수기준: ([\d,]+)원 이하")
 
@@ -29,7 +35,7 @@ for line in lines:
     if price <= buy_price:
         buy_hits[name] += 1
 
-print(f"{'종목':10} {'조회횟수':>8} {'1주일 최저가':>14} {'매수기준':>14} {'조건충족횟수':>10}")
+print(f"{'종목':10} {'조회횟수':>8} {'기간중 최저가':>14} {'매수기준':>14} {'조건충족횟수':>10}")
 for name in min_price:
     print(f"{name:10} {total_lines[name]:>8} {min_price[name]:>14,} {buy_threshold.get(name, 0):>14,} {buy_hits[name]:>10}")
 
